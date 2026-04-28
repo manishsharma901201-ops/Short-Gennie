@@ -1,6 +1,5 @@
 const express = require("express");
 const axios = require("axios");
-const edgeTTS = require("edge-tts");
 const ffmpeg = require("fluent-ffmpeg");
 const ffmpegPath = require("ffmpeg-static");
 const fs = require("fs");
@@ -11,7 +10,7 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const app = express();
 app.use(express.json());
 
-// 🔥 Serve frontend
+// 🌐 Serve frontend
 app.use(express.static("."));
 
 app.get("/", (req, res) => {
@@ -29,7 +28,13 @@ app.post("/generate", async (req, res) => {
     // 🧹 Clean old files
     const files = fs.readdirSync(".");
     files.forEach(f => {
-      if (f.startsWith("img") || f.startsWith("clip") || f.endsWith(".mp3") || f.endsWith(".mp4") || f === "list.txt") {
+      if (
+        f.startsWith("img") ||
+        f.startsWith("clip") ||
+        f.endsWith(".mp3") ||
+        f.endsWith(".mp4") ||
+        f === "list.txt"
+      ) {
         try { fs.unlinkSync(f); } catch {}
       }
     });
@@ -53,12 +58,18 @@ app.post("/generate", async (req, res) => {
       await new Promise(r => writer.on("finish", r));
     }
 
-    // 🎤 2. Voice generate
-    await edgeTTS.save({
-      text: script,
-      voice: "hi-IN-SwaraNeural",
-      file: "voice.mp3"
+    // 🎤 2. Voice (Google TTS - FREE)
+    const gttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(script)}&tl=hi&client=tw-ob`;
+
+    const voiceStream = await axios({
+      url: gttsUrl,
+      method: "GET",
+      responseType: "stream"
     });
+
+    const voiceWriter = fs.createWriteStream("voice.mp3");
+    voiceStream.data.pipe(voiceWriter);
+    await new Promise(resolve => voiceWriter.on("finish", resolve));
 
     // 🎬 3. Image → clips
     let clips = [];
