@@ -95,6 +95,9 @@ app.post("/generate", async (req, res) => {
     console.error(err);
     res.status(500).send("Error generating video");
   }
+});app.use(express.static("."));
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/index.html");
 });
 
 app.listen(3000, () => console.log("Server Running"));
