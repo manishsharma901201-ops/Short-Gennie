@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Shorts Generator</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 50px;
+      background: #111;
+      color: white;
+    }
+    input, textarea {
+      width: 80%;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      padding: 15px 30px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🎬 Shorts Generator</h1>
+
+  <input id="topic" placeholder="Enter topic"><br>
+  <textarea id="script" placeholder="Paste script here"></textarea><br>
+
+  <button onclick="generateVideo()">Generate Video</button>
+
+  <p id="status"></p>
+
+  <script>
+    async function generateVideo() {
+      const topic = document.getElementById("topic").value;
+      const script = document.getElementById("script").value;
+
+      document.getElementById("status").innerText = "Generating... ⏳";
+
+      const response = await fetch("/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ topic, script })
+      });
+
+      const blob = await response.blob();
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "video.mp4";
+      a.click();
+
+      document.getElementById("status").innerText = "Download started 🎉";
+    }
+  </script>
+
+</body>
+</html>
