@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Short-Gennie 🎬</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 10px;
+    }
+
+    input, textarea {
+      width: 90%;
+      max-width: 400px;
+      padding: 12px;
+      margin: 10px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+    }
+
+    textarea {
+      height: 120px;
+    }
+
+    button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #22c55e;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background: #16a34a;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #94a3b8;
+    }
+
+    .loader {
+      display: none;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎬 Short-Gennie</h1>
+  <p>Create Viral YouTube Shorts Automatically</p>
+
+  <input id="topic" placeholder="Enter topic (e.g. motivation)" />
+
+  <textarea id="script" placeholder="Paste your script here..."></textarea>
+
+  <br>
+  <button onclick="generate()">🚀 Generate Video</button>
+
+  <div class="loader" id="loader">⏳ Generating video... please wait</div>
+  <div id="status"></div>
+
+  <script>
+    async function generate() {
+      const topic = document.getElementById("topic").value;
+      const script = document.getElementById("script").value;
+
+      if (!topic || !script) {
+        alert("Please fill topic and script");
+        return;
+      }
+
+      document.getElementById("loader").style.display = "block";
+      document.getElementById("status").innerText = "";
+
+      try {
+        const response = await fetch("/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ topic, script })
+        });
+
+        if (!response.ok) {
+          throw new Error("Server error");
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "short-video.mp4";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        document.getElementById("status").innerText = "✅ Video generated successfully!";
+      } catch (err) {
+        document.getElementById("status").innerText = "❌ Error generating video";
+      }
+
+      document.getElementById("loader").style.display = "none";
+    }
+  </script>
+
+</body>
+</html>
