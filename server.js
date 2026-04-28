@@ -10,44 +10,15 @@ ffmpeg.setFfmpegPath(ffmpegPath);
 const app = express();
 app.use(express.json());
 
-// 🔐 ENV VARIABLES
-const TOGETHER_API_KEY = process.env.TOGETHER_API_KEY;
+// 🔐 ONLY PEXELS KEY (Render ENV me add karo)
 const PEXELS_KEY = process.env.PEXELS_KEY;
 
 app.post("/generate", async (req, res) => {
   const topic = req.body.topic || "motivation";
+  const script = req.body.script || "Namaste dosto! Aaj ek interesting baat.";
 
   try {
-    // 🧠 1. SCRIPT GENERATE (Together AI)
-    let script = "Namaste dosto!";
-
-    try {
-      const ai = await axios.post(
-        "https://api.together.xyz/v1/chat/completions",
-        {
-          model: "mistralai/Mistral-7B-Instruct-v0.1",
-          messages: [
-            {
-              role: "user",
-              content: `Create a 25 second viral Hindi YouTube Shorts script on ${topic}`
-            }
-          ]
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${TOGETHER_API_KEY}`,
-            "Content-Type": "application/json"
-          }
-        }
-      );
-
-      script = ai.data.choices[0].message.content;
-
-    } catch (e) {
-      console.log("AI fallback used");
-    }
-
-    // 🖼️ 2. IMAGE FETCH
+    // 🖼️ 1. IMAGES FETCH
     const imgRes = await axios.get(
       `https://api.pexels.com/v1/search?query=${topic}&per_page=5`,
       { headers: { Authorization: PEXELS_KEY } }
@@ -66,14 +37,14 @@ app.post("/generate", async (req, res) => {
       await new Promise(r => writer.on("finish", r));
     }
 
-    // 🎤 3. VOICE
+    // 🎤 2. VOICE (Edge TTS)
     await edgeTTS.save({
       text: script,
       voice: "hi-IN-SwaraNeural",
       file: "voice.mp3"
     });
 
-    // 🎬 4. CLIPS
+    // 🎬 3. IMAGE → VIDEO CLIPS
     let clips = [];
 
     for (let i = 0; i < imageFiles.length; i++) {
@@ -95,7 +66,7 @@ app.post("/generate", async (req, res) => {
       });
     }
 
-    // 🔗 MERGE
+    // 🔗 4. MERGE CLIPS
     fs.writeFileSync("list.txt", clips.map(c => `file '${c}'`).join("\n"));
 
     await new Promise((resolve) => {
@@ -107,7 +78,7 @@ app.post("/generate", async (req, res) => {
         .on("end", resolve);
     });
 
-    // 🎧 AUDIO ADD
+    // 🎧 5. ADD AUDIO
     await new Promise((resolve) => {
       ffmpeg()
         .input("video.mp4")
@@ -117,6 +88,7 @@ app.post("/generate", async (req, res) => {
         .on("end", resolve);
     });
 
+    // 📥 DOWNLOAD
     res.download("final.mp4");
 
   } catch (err) {
